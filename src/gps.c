@@ -15,16 +15,17 @@
 static int gps_uart_no = 0;
 static size_t gpsDataAvailable = 0;
 static struct minmea_sentence_rmc lastFrame;
+static char* gps_data;
 
 char *mgos_get_location()
 {
 
-    struct mbuf fb;
-    struct json_out out = JSON_OUT_MBUF(&fb);
+//     struct mbuf fb;
+//     struct json_out out = JSON_OUT_MBUF(&fb);
 
-    //printf("GPS Request direct \n");
+//     //printf("GPS Request direct \n");
 
-    mbuf_init(&fb, 50);
+//     mbuf_init(&fb, 50);
 
     float lat = minmea_tocoord(&lastFrame.latitude);
     float lon = minmea_tocoord(&lastFrame.longitude);
@@ -49,7 +50,7 @@ char *mgos_get_location()
 
     //mbuf_free(&fb);
 
-    return fb.buf;
+    return gps_data;
 }
 
 static void parseGpsData(char *line)
@@ -207,6 +208,8 @@ bool mgos_gps_init(void)
 
     mgos_uart_set_dispatcher(gps_uart_no, uart_dispatcher, NULL /* arg */);
     mgos_uart_set_rx_enabled(gps_uart_no, true);
+    
+    gps_data = calloc(1, 64);
 
     return true;
 }
