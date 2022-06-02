@@ -46,7 +46,7 @@ char *mgos_get_location()
         speed = 0.0f;
     }
 
-    json_printf(&out, "{lat: \"%f\", lon: \"%f\", sp: \"%f\"}", lat, lon, speed);
+    snprintf(gps_data, 63, "{lat: \"%f\", lon: \"%f\", sp: \"%f\"}", lat, lon, speed);
 
     //mbuf_free(&fb);
 
