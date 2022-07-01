@@ -15,17 +15,16 @@
 static int gps_uart_no = 0;
 static size_t gpsDataAvailable = 0;
 static struct minmea_sentence_rmc lastFrame;
-static char* gps_data;
 
 char *mgos_get_location()
 {
 
-//     struct mbuf fb;
-//     struct json_out out = JSON_OUT_MBUF(&fb);
+    struct mbuf fb;
+    struct json_out out = JSON_OUT_MBUF(&fb);
 
-//     //printf("GPS Request direct \n");
+    //printf("GPS Request direct \n");
 
-//     mbuf_init(&fb, 50);
+    mbuf_init(&fb, 50);
 
     float lat = minmea_tocoord(&lastFrame.latitude);
     float lon = minmea_tocoord(&lastFrame.longitude);
@@ -46,11 +45,11 @@ char *mgos_get_location()
         speed = 0.0f;
     }
 
-    snprintf(gps_data, 63, "{lat: \"%f\", lon: \"%f\", sp: \"%f\"}", lat, lon, speed);
+    json_printf(&out, "{lat: \"%f\", lon: \"%f\", sp: \"%f\"}", lat, lon, speed);
 
     //mbuf_free(&fb);
 
-    return gps_data;
+    return fb.buf;
 }
 
 static void parseGpsData(char *line)
@@ -190,13 +189,15 @@ static void uart_dispatcher(int uart_no, void *arg)
 
 bool mgos_gps_init(void)
 {
-
-    struct mgos_uart_config ucfg;
     gps_uart_no = mgos_sys_config_get_gps_uart_no();
+    struct mgos_uart_config ucfg;
     mgos_uart_config_set_defaults(gps_uart_no, &ucfg);
-
     ucfg.baud_rate = mgos_sys_config_get_gps_baud_rate();
     ucfg.num_data_bits = 8;
+    ucfg.dev.tx_gpio = mgos_sys_config_get_gps_tx_gpio();
+    ucfg.dev.rx_gpio = mgos_sys_config_get_gps_rx_gpio();
+ 
+
     //ucfg.parity = MGOS_UART_PARITY_NONE;
     //ucfg.stop_bits = MGOS_UART_STOP_BITS_1;
     if (!mgos_uart_configure(gps_uart_no, &ucfg))
@@ -208,8 +209,6 @@ bool mgos_gps_init(void)
 
     mgos_uart_set_dispatcher(gps_uart_no, uart_dispatcher, NULL /* arg */);
     mgos_uart_set_rx_enabled(gps_uart_no, true);
-    
-    gps_data = calloc(1, 64);
 
     return true;
 }
